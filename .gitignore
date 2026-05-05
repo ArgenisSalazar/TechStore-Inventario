@@ -1,0 +1,27 @@
+# Dependencias
+node_modules/
+npm-debug.log*
+
+# Variables de entorno (¡NUNCA subir .env!)
+.env
+
+# Build outputs
+dist/
+build/
+
+# Logs
+logs/
+*.log
+
+# Docker volumes locales
+postgres_data/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

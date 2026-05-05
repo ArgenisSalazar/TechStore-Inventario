@@ -1,0 +1,72 @@
+version: '3.8'
+
+# =============================================
+# TechStore — Docker Compose
+# Servicios: postgres · backend · frontend
+# =============================================
+
+services:
+
+  # ── Base de datos PostgreSQL ───────────────
+  postgres:
+    image: postgres:15-alpine
+    container_name: techstore_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: techstore
+      POSTGRES_USER: techstore_user
+      POSTGRES_PASSWORD: techstore_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - techstore_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U techstore_user -d techstore"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Backend Node.js + Express ──────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: techstore_api
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - techstore_network
+    volumes:
+      - ./backend/src:/app/src   # Hot-reload del código fuente
+
+  # ── Frontend React + Nginx ─────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: techstore_web
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - techstore_network
+
+# ── Volúmenes ──────────────────────────────
+volumes:
+  postgres_data:
+    driver: local
+
+# ── Red interna ────────────────────────────
+networks:
+  techstore_network:
+    driver: bridge
